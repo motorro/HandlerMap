@@ -51,124 +51,146 @@ describe('HandlerMapMixin', function() {
         var handler, wasCalledAt;
 
         beforeEach(function(){
-            wasCalledAt = undefined;
-            handler = {
-                handler: function() {
-                    wasCalledAt = this;
-                }
-            };
+            handler = jasmine.createSpy("handler");
         });
 
         it("passed as functions should register be called with 'listener' scope", function(){
-            spyOn(handler, "handler").andCallThrough();
-
             HandlerMapMixin.call(
                 listener,
                 target,
                 {
-                    "test":handler.handler
+                    "test":handler
                 }
             );
 
             //target.addEventListener("test", function(){alert("zzzz")});
             target.dispatchEvent(evt);
-            expect(handler.handler).toHaveBeenCalledWith(evt);
-            expect(wasCalledAt).toBe(listener);
+            expect(handler).toHaveBeenCalled();
+            expect(handler.mostRecentCall.object).toBe(listener);
+        });
+
+        it("passed as functions should register be called with 'listener' scope for redispatcher", function(){
+            var redispatcher = new Redispatcher(target, "test");
+
+            HandlerMapMixin.call(
+                listener,
+                redispatcher.target,
+                {
+                    "test":handler
+                }
+            );
+
+            //target.addEventListener("test", function(){alert("zzzz")});
+            target.dispatchEvent(evt);
+            expect(handler).toHaveBeenCalled();
+            expect(handler.mostRecentCall.object).toBe(listener);
         });
 
         it("passed as objects without scope should register and be called with 'listener' scope", function(){
-            spyOn(handler, "handler").andCallThrough();
-
             HandlerMapMixin.call(
                 listener,
                 target,
                 {
                     "test":{
-                        "fn": handler.handler
+                        "fn": handler
                     }
                 }
             );
 
             target.dispatchEvent(evt);
-            expect(handler.handler).toHaveBeenCalledWith(evt);
-            expect(wasCalledAt).toBe(listener);
+            expect(handler).toHaveBeenCalled();
+            expect(handler.mostRecentCall.object).toBe(listener);
         });
 
         it("passed as objects with scope should register and be called with passed scope", function(){
-            spyOn(handler, "handler").andCallThrough();
+            var scope = {};
 
             HandlerMapMixin.call(
                 listener,
                 target,
                 {
                     "test":{
-                        "fn": handler.handler,
-                        "scope": handler
+                        "fn": handler,
+                        "scope": scope
                     }
                 }
             );
 
             target.dispatchEvent(evt);
-            expect(handler.handler).toHaveBeenCalledWith(evt);
-            expect(wasCalledAt).toBe(handler);
+            expect(handler).toHaveBeenCalled();
+            expect(handler.mostRecentCall.object).toBe(scope);
+        });
+
+        it("passed as objects with scope should register and be called with passed scope for redispatcher", function(){
+            var redispatcher = new Redispatcher(target, "test");
+            var scope = {};
+
+            HandlerMapMixin.call(
+                listener,
+                redispatcher.target,
+                {
+                    "test":{
+                        "fn": handler,
+                        "scope": scope
+                    }
+                }
+            );
+
+            target.dispatchEvent(evt);
+            expect(handler).toHaveBeenCalled();
+            expect(handler.mostRecentCall.object).toBe(scope);
         });
 
         it("should not be called if mixed in with 'deafOnCreate'", function(){
-            spyOn(handler, "handler").andCallThrough();
-
             HandlerMapMixin.call(
                 listener,
                 target,
                 {
-                    "test":handler.handler
+                    "test":handler
                 },
                 true
             );
 
             target.dispatchEvent(evt);
-            expect(handler.handler).not.toHaveBeenCalled();
+            expect(handler).not.toHaveBeenCalled();
         });
 
         it("should not be called if 'doNotListen' was called", function(){
-            spyOn(handler, "handler").andCallThrough();
-
             HandlerMapMixin.call(
                 listener,
                 target,
                 {
-                    "test":handler.handler
+                    "test":handler
                 }
             );
 
             target.dispatchEvent(evt);
-            expect(handler.handler).toHaveBeenCalled();
+            expect(handler).toHaveBeenCalled();
 
             listener.doNotListen();
             target.dispatchEvent(evt);
-            expect(handler.handler.callCount).toEqual(1);
+            expect(handler.callCount).toEqual(1);
         });
 
         it("should resume operation if 'listen' was called", function(){
-            spyOn(handler, "handler").andCallThrough();
-
             HandlerMapMixin.call(
                 listener,
                 target,
                 {
-                    "test":handler.handler
+                    "test":handler
                 }
             );
 
             target.dispatchEvent(evt);
-            expect(handler.handler).toHaveBeenCalled();
+            expect(handler).toHaveBeenCalled();
 
             listener.doNotListen();
             target.dispatchEvent(evt);
-            expect(handler.handler.callCount).toEqual(1);
+            expect(handler.callCount).toEqual(1);
 
             listener.listen();
             target.dispatchEvent(evt);
-            expect(handler.handler.callCount).toEqual(2);
+            expect(handler.callCount).toEqual(2);
         });
 
         describe("changed through 'updateHandlers'", function(){
@@ -337,6 +359,37 @@ describe('HandlerMapMixin', function() {
             HandlerMapMixin.call(
                 listener,
                 target,
+                configs[1]
+            );
+
+            target.dispatchEvent(evt);
+            expect(handlers["handler1"]).toHaveBeenCalled();
+            expect(handlers["handler2"]).toHaveBeenCalled();
+            expect(handlers["handler1"].callCount).toEqual(1);
+            expect(handlers["handler1"].callCount).toEqual(1);
+        });
+
+        it("should call all handlers bound for event through redispatcher", function(){
+            var redispatcher = new Redispatcher(target, "test");
+
+            var configs = [
+                {
+                    "test":handlers["handler1"]
+                },
+                {
+                    "test":handlers["handler2"]
+                }
+            ];
+
+            HandlerMapMixin.call(
+                listener,
+                redispatcher.target,
+                configs[0]
+            );
+
+            HandlerMapMixin.call(
+                listener,
+                redispatcher.target,
                 configs[1]
             );
 
