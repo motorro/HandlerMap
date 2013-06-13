@@ -1,7 +1,7 @@
 HandlerMap
 ==========
 
-HandlerMapMixin is a utility mixin to allow quick HTML DOM event listener management and reconfiguration especialy if you need to maintain a handler to be single and exclusive within a component for particular event.
+HandlerMapMixin is a JavaScript utility mixin to allow quick HTML DOM event listener management and reconfiguration especialy if you need to maintain a handler to be single and exclusive within a component for particular event.
 For example I use it to maintain an exclusive handler for 'back' button pressed event in [Cordova](http://cordova.apache.org/) applications for Android. 
 
 ========================================
