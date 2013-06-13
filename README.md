@@ -4,6 +4,33 @@ HandlerMap
 HandlerMapMixin is a utility mixin to allow quick HTML DOM event listener management and reconfiguration especialy if you need to maintain a handler to be single and exclusive within a component for particular event.
 For example I use it to maintain an exclusive handler for 'back' button pressed event in [Cordova](http://cordova.apache.org/) applications for Android. 
 
+========================================
+## Note on Cordova
+
+Cordova dispatches some custom events (like 'backbutton') and their dispatcher is not fully compatible with HTML DOM events and features this utility requires:
+
+* Not compatible with [EventListener](https://developer.mozilla.org/en-US/docs/Web/API/EventListener).[Cordova JIRA 3785](https://issues.apache.org/jira/browse/CB-3785)
+* `target` and `currentTarget` are always null for those custom event. [Cordova JIRA 3786](https://issues.apache.org/jira/browse/CB-3786)
+
+To subscribe to those custom events you need either monkey-patch Cordova or redispatch events using a kind of [Redispatcher](/blob/master/src/Redispatcher.js):
+
+```javascript
+    var docRedispatcher = new Redispatcher(document, "backbutton", "searchbutton", "menubutton");
+
+    // Map hardware buttons (stub)
+    HandlerMapMixin.call(
+        this,
+        docRedispatcher.target,
+        {
+            "backbutton": function(){console.log("BACK!!!!!!")},
+            "searchbutton": function(){console.log("SEARCH!!!!!!")},
+            "menubutton": function(){console.log("MENU!!!!!!")}
+        }
+    );
+```
+
+========================================
+
 ## Creating a map
 
 Mixin function has the following signature:
