@@ -218,6 +218,10 @@ describe('HandlerMapMixin', function() {
                 var oldSet = listener.updateHandlers(configs[1]);
 
                 expect(oldSet).toBe(configs[0]);
+
+                oldSet = listener.updateHandlers(configs[2]);
+
+                expect(oldSet).toBe(configs[1]);
             });
 
             it("should invoke new handlers and should not invoke previously passed handlers", function(){
@@ -303,6 +307,10 @@ describe('HandlerMapMixin', function() {
                 var oldHandler = listener.updateHandler("test", configs[1]["test"]);
 
                 expect(oldHandler).toBe(configs[0]["test"]);
+
+                oldHandler = listener.updateHandler("test", configs[2]["test"]);
+
+                expect(oldHandler).toBe(configs[1]["test"]);
             });
 
             it("should reconfigure required event only, invoke new handler and not invoke previously passed handler for a single reconfigured event", function(){
