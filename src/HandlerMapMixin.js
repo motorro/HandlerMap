@@ -59,15 +59,7 @@ function HandlerMapMixin(target, events, deafOnCreate) {
     // e.g. do nothing with hardware button event mapping on iOS vs Android in PhoneGap
 
     //Copy original config to not to spoil original with handler modification
-    var eventConfig = {};
-    (function(){
-        events = events || {};
-        for (var e in events) {
-            if (events.hasOwnProperty(e)) {
-                eventConfig[e] = events[e];
-            }
-        }
-    })();
+    var eventConfig = copyObject(events);
 
     // Listening flag
     var deaf = true;
@@ -76,6 +68,8 @@ function HandlerMapMixin(target, events, deafOnCreate) {
     var _handleEvent    = this["handleEvent"];
     var _listen         = this["listen"];
     var _doNotListen    = this["doNotListen"];
+    var _getHandler     = this["getHandler"];
+    var _getHandlers    = this["getHandlers"];
     var _updateHandler  = this["updateHandler"];
     var _updateHandlers = this["updateHandlers"];
 
@@ -161,9 +155,14 @@ function HandlerMapMixin(target, events, deafOnCreate) {
      * @returns {Object} Last used listener setup
      */
     this.getHandler = function(event) {
-        //A soon as all chain functions go in LIFO order
-        //We only need to return last config passed to top-level object
-        return events[event];
+        // Take this chain link
+        // If event is not defined here it may be defined in older chain links
+        var result = eventConfig[event];
+        if (result) {
+            return result;
+        }
+
+        return ("function" === typeof _getHandler) ? _getHandler() : result;
     };
 
     /**
@@ -175,6 +174,8 @@ function HandlerMapMixin(target, events, deafOnCreate) {
      * @returns {Object} Listener setup used before reset
      */
     this.updateHandler = function(event, handler) {
+        var oldHandler = this.getHandler(event);
+
         if (eventConfig.hasOwnProperty(event)) {
             eventConfig[event] = handler;
         }
@@ -183,7 +184,7 @@ function HandlerMapMixin(target, events, deafOnCreate) {
             _updateHandler.call(this, event, handler);
         }
 
-        return this.getHandler(event);
+        return oldHandler;
     };
 
     /**
@@ -191,9 +192,13 @@ function HandlerMapMixin(target, events, deafOnCreate) {
      * @returns {Object} Last used listener setup
      */
     this.getHandlers = function() {
-        //A soon as all chain functions go in LIFO order
-        //We only need to return last config passed to top-level object
-        return events;
+        // Combine all chained configs
+        var result = copyObject(eventConfig);
+        if ("function" === typeof _getHandler) {
+            copyObject(_getHandler(), result);
+        }
+
+        return result;
     };
 
     /**
@@ -204,6 +209,8 @@ function HandlerMapMixin(target, events, deafOnCreate) {
      * @returns {Object} Listener setup used before reset
      */
     this.updateHandlers = function(newSet) {
+        var oldConfig = this.getHandlers();
+
         for (var e in eventConfig) {
             if (eventConfig.hasOwnProperty(e)) {
                 eventConfig[e] = (newSet && newSet[e]) || null;
@@ -214,11 +221,27 @@ function HandlerMapMixin(target, events, deafOnCreate) {
             _updateHandlers.call(this, newSet);
         }
 
-        return this.getHandlers();
+        return oldConfig;
     };
 
     // Listen to events by default
     if (!deafOnCreate) {
         this.listen();
+    }
+
+    //Object property copy
+    function copyObject(from, to) {
+        to = to || {};
+        if (!from) {
+            return to;
+        }
+
+        var k;
+        for (k in from) {
+            if (from.hasOwnProperty(k)) {
+                to[k] = from[k];
+            }
+        }
+        return to;
     }
 }
