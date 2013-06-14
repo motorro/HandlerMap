@@ -194,8 +194,8 @@ function HandlerMapMixin(target, events, deafOnCreate) {
     this.getHandlers = function() {
         // Combine all chained configs
         var result = copyObject(eventConfig);
-        if ("function" === typeof _getHandler) {
-            copyObject(_getHandler(), result);
+        if ("function" === typeof _getHandlers) {
+            copyObject(_getHandlers(), result);
         }
 
         return result;
